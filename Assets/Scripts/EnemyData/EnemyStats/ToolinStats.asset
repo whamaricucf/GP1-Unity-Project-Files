@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9437119945726a5458a8c6bc30c89e2b, type: 3}
+  m_Name: ToolinStats
+  m_EditorClassIdentifier: 
+  enemyName: Toolin
+  maxHP: 15
+  maxMP: 10
+  str: 10
+  mag: 8
+  def: 5
+  agi: 10
+  exp: 40

@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7444c60abc7b7a04f854891d22383087, type: 3}
+  m_Name: RubberDuckData
+  m_EditorClassIdentifier: 
+  className: Black Mage
+  heroName: Rubber Duck
+  overworld: {fileID: 21300000, guid: a2cddfe6cc30eec48bc1597e9c3aa166, type: 3}
+  menu: {fileID: 21300000, guid: a2cddfe6cc30eec48bc1597e9c3aa166, type: 3}
+  partySlot: 3
+  inParty: 0
+  backRow: 0
+  canDoMagic: 1
+  dead: 0
+  lvl: 1
+  defending: 0
+  stunned: 0
+  currentPosition: {x: 0, y: 0, z: 0}
+  knowsFire1: 1
+  knowsFire2: 0
+  knowsIce1: 1
+  knowsIce2: 0
+  knowsZap1: 1
+  knowsZap2: 0
+  knowsCure: 0
+  knowsAssess: 0
