@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: MuskbudStats
   m_EditorClassIdentifier: 
   enemyName: Muskbud
-  maxHP: 10
+  maxHP: 50
   maxMP: 10
-  str: 10
+  str: 20
   mag: 8
   def: 4
   agi: 10

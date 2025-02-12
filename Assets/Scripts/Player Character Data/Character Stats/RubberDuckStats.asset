@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 095d3d63d235fb645a6059eb7bedd510, type: 3}
   m_Name: RubberDuckStats
   m_EditorClassIdentifier: 
-  HP: 35
+  HP: 12
   maxHP: 35
-  MP: 20
-  maxMP: 20
+  MP: 45
+  maxMP: 50
   str: 5
   mag: 14
-  def: 2
+  def: 4
   agi: 10

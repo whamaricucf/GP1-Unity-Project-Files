@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   className: Warrior
   heroName: Knightro
-  overworld: {fileID: 21300000, guid: 6b5ce1e75ee0c714cbac67f5b9cafc21, type: 3}
+  overworld: {fileID: 21300000, guid: 3b629390d9b7e1e44b0d8603e551f6e2, type: 3}
   menu: {fileID: 21300000, guid: 6b5ce1e75ee0c714cbac67f5b9cafc21, type: 3}
   partySlot: 1
   inParty: 1
   backRow: 0
   canDoMagic: 0
   dead: 0
-  lvl: 1
+  lvl: 5
   defending: 0
   stunned: 0
   currentPosition: {x: 0, y: 0, z: 0}

@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: ToolinStats
   m_EditorClassIdentifier: 
   enemyName: Toolin
-  maxHP: 15
+  maxHP: 40
   maxMP: 10
-  str: 10
+  str: 15
   mag: 8
   def: 5
   agi: 10

@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 095d3d63d235fb645a6059eb7bedd510, type: 3}
   m_Name: CitronautStats
   m_EditorClassIdentifier: 
-  HP: 15
-  maxHP: 15
+  HP: 70
+  maxHP: 70
   MP: 10
   maxMP: 10
   str: 10
   mag: 6
-  def: 5
+  def: 15
   agi: 12

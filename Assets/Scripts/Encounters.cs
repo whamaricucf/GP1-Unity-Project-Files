@@ -64,13 +64,7 @@ public class Encounters : MonoBehaviour
         if (scene.name == "DungeonBattleScene")
         {
             Debug.Log("Dungeon Battle Scene Loaded");
-            DungeonEncounters();
-            BSM = GameObject.Find("BattleManager").GetComponent<BattleStateMachine>();
-        }
-        if (scene.name == "BossBattleScene")
-        {
-            Debug.Log("Boss Battle Scene Loaded");
-            BossBattle();
+            OverworldEncounters();
             BSM = GameObject.Find("BattleManager").GetComponent<BattleStateMachine>();
         }
     }

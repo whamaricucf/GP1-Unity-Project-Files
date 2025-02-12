@@ -9,16 +9,25 @@ public class MainMenu : MonoBehaviour
     public PlayerID Pegasus;
     public PlayerID RubberDuck;
     public PlayerID Citronaut;
+    [SerializeField] private SceneSO sceneSO;
+    private int turnChoice;
+    public GameObject AP;
 
-    // Start is called before the first frame update
-    void Start()
+    void OnEnable()
     {
+        turnChoice = 1;
+        sceneSO.encounterCD = 15;
+        sceneSO.firstRunOW = false;
+        sceneSO.firstRunD = false;
+        sceneSO.firstRunD = true;
+        sceneSO.firstRunDEncounter = false;
+
         Knightro.data.partySlot = 1;
         Knightro.data.inParty = true;
         Knightro.data.backRow = false;
         Knightro.data.canDoMagic = false;
         Knightro.data.dead = false;
-        Knightro.data.lvl = 1;
+        Knightro.data.lvl = 5;
         Knightro.data.defending = false;
         Knightro.data.stunned = false;
         Knightro.data.knowsFire1 = false;
@@ -32,11 +41,10 @@ public class MainMenu : MonoBehaviour
 
         Pegasus.data.partySlot = 2;
         Pegasus.data.inParty = true;
-        //change this before submit ^
         Pegasus.data.backRow = true;
         Pegasus.data.canDoMagic = true;
         Pegasus.data.dead = false;
-        Pegasus.data.lvl = 1;
+        Pegasus.data.lvl = 5;
         Pegasus.data.defending = false;
         Pegasus.data.stunned = false;
         Pegasus.data.knowsFire1 = false;
@@ -50,11 +58,10 @@ public class MainMenu : MonoBehaviour
 
         RubberDuck.data.partySlot = 3;
         RubberDuck.data.inParty = true;
-        //change this before submit ^
         RubberDuck.data.backRow = true;
         RubberDuck.data.canDoMagic = true;
         RubberDuck.data.dead = false;
-        RubberDuck.data.lvl = 1;
+        RubberDuck.data.lvl = 5;
         RubberDuck.data.defending = false;
         RubberDuck.data.stunned = false;
         RubberDuck.data.knowsFire1 = true;
@@ -66,12 +73,12 @@ public class MainMenu : MonoBehaviour
         RubberDuck.data.knowsCure = false;
         RubberDuck.data.knowsAssess = false;
 
-        Citronaut.data.partySlot = 0;
-        Citronaut.data.inParty = false;
+        Citronaut.data.partySlot = 4;
+        Citronaut.data.inParty = true;
         Citronaut.data.backRow = false;
         Citronaut.data.canDoMagic = false;
         Citronaut.data.dead = false;
-        Citronaut.data.lvl = 1;
+        Citronaut.data.lvl = 5;
         Citronaut.data.defending = false;
         Citronaut.data.stunned = false;
         Citronaut.data.knowsFire1 = false;
@@ -96,12 +103,46 @@ public class MainMenu : MonoBehaviour
         Citronaut.stats.MP = Citronaut.stats.maxMP;
     }
 
-    // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.DownArrow))
         {
-            SceneManager.LoadScene("Overworld", LoadSceneMode.Single);
+            turnChoice++;
+            if (turnChoice > 2)
+            {
+                turnChoice = 1;
+            }
+        }
+        if (Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            turnChoice--;
+            if (turnChoice < 1)
+            {
+                turnChoice = 2;
+            }
+        }
+
+        if (Input.GetKey(KeyCode.LeftShift) && Input.GetKey(KeyCode.G))
+        {
+            SceneManager.LoadScene("GameOver", LoadSceneMode.Single);
+        }
+
+        switch (turnChoice)
+        {
+            case 1:
+                AP.transform.position = new Vector3(-2.33f, -1.24f, 0);
+                if (Input.GetKeyDown(KeyCode.Return))
+                {
+                    SceneManager.LoadScene("Overworld", LoadSceneMode.Single);
+                }
+                break;
+            case 2:
+                AP.transform.position = new Vector3(-1.83f, -2.81f, 0);
+                if (Input.GetKeyDown(KeyCode.Return))
+                {
+                    SceneManager.LoadScene("Credits", LoadSceneMode.Single);
+                }
+                break;
         }
     }
 }

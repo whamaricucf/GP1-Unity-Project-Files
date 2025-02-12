@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 095d3d63d235fb645a6059eb7bedd510, type: 3}
   m_Name: PegasusStats
   m_EditorClassIdentifier: 
-  HP: 20
-  maxHP: 20
-  MP: 20
-  maxMP: 20
-  str: 8
+  HP: 40
+  maxHP: 40
+  MP: 45
+  maxMP: 50
+  str: 6
   mag: 12
-  def: 4
+  def: 8
   agi: 14

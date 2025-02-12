@@ -10,6 +10,11 @@ using Random = System.Random;
 
 public class BattleStateMachine : MonoBehaviour
 {
+    [SerializeField] private SceneSO sceneSO;
+    private string prevScene;
+
+    private bool canGo;
+    private bool assessUse;
     private int turnChoice;
     private int spellChoice;
     private PlayerID[] partyIDArray;
@@ -18,6 +23,10 @@ public class BattleStateMachine : MonoBehaviour
     public TextMeshProUGUI[] heroDisplayHP;
     public TextMeshProUGUI[] heroDisplayMP;
     public TextMeshProUGUI[] heroDisplayMaxHP;
+    public TextMeshProUGUI[] heroDisplayAction;
+
+    private bool missed;
+    private bool turnTaken;
 
     public GameObject fireball;
     public GameObject iceball;
@@ -39,6 +48,7 @@ public class BattleStateMachine : MonoBehaviour
     public TextMeshProUGUI heroHP1;
     public TextMeshProUGUI heroMaxHP1;
     public TextMeshProUGUI heroMP1;
+    public TextMeshProUGUI heroAction1;
 
     private GameObject spellThatExists;
     private Vector3 goalPosition;
@@ -48,18 +58,24 @@ public class BattleStateMachine : MonoBehaviour
     public TextMeshProUGUI heroHP2;
     public TextMeshProUGUI heroMaxHP2;
     public TextMeshProUGUI heroMP2;
+    public TextMeshProUGUI heroAction2;
 
     public GameObject heroUIBar3;
     public TextMeshProUGUI heroName3;
     public TextMeshProUGUI heroHP3;
     public TextMeshProUGUI heroMaxHP3;
     public TextMeshProUGUI heroMP3;
+    public TextMeshProUGUI heroAction3;
 
     public GameObject heroUIBar4;
     public TextMeshProUGUI heroName4;
     public TextMeshProUGUI heroHP4;
     public TextMeshProUGUI heroMaxHP4;
     public TextMeshProUGUI heroMP4;
+    public TextMeshProUGUI heroAction4;
+
+    private string actionTaken;
+
 
     private int encounterExp;
 
@@ -71,6 +87,7 @@ public class BattleStateMachine : MonoBehaviour
     private Enemy curTargetData;
     private Player playerTargetData;
     private int tempIteration;
+    public DamagePopUp DamagePopUp;
 
     public enum PerformAction
     {
@@ -109,6 +126,7 @@ public class BattleStateMachine : MonoBehaviour
         MAGICTARGET,
         DESTROYTARGET,
         MOVESPELL,
+        FLEE,
         DONE,
         GAMEEND
     }
@@ -131,6 +149,10 @@ public class BattleStateMachine : MonoBehaviour
     public List<GameObject> EnemiesToManage = new List<GameObject>();
     private HandleTurns HeroChoice;
 
+    public AudioClip dmgSFX;
+    public AudioClip healSFX;
+    public AudioClip missSFX;
+
     public GameObject ActionPanel;
     public TextMeshProUGUI AttackText;
     public TextMeshProUGUI MagicText;
@@ -145,12 +167,15 @@ public class BattleStateMachine : MonoBehaviour
     public GameObject ItemPanel;
     public GameObject DescPanel;
     public GameObject UserActionPanel;
+    public TextMeshProUGUI userActionName;
+    public TextMeshProUGUI userActionMP;
     public GameObject FlavorPanel;
     public TextMeshProUGUI UserActionName;
     public TextMeshProUGUI UserActionTaken;
     public TextMeshProUGUI UserActionMP;
     public GameObject ActionPointer;
     public GameObject ActionPointer2;
+    public GameObject DamagePanel;
 
     public TextMeshProUGUI Fire1Text;
     public TextMeshProUGUI Fire2Text;
@@ -165,7 +190,16 @@ public class BattleStateMachine : MonoBehaviour
     public TextMeshProUGUI FlavorText;
     private string tempFlavor;
 
+    private AudioSource audio;
 
+    private Vector3 firstPos;
+    private Vector3 secondPos;
+
+    private Vector3 targetFirstPos;
+    private Vector3 targetSecondPos;
+
+    private Vector3 enemyFirstPos;
+    private Vector3 enemySecondPos;
 
     private int atkDmg;
     private int damageRating;
@@ -199,6 +233,11 @@ public class BattleStateMachine : MonoBehaviour
         heroDisplayMP[1] = heroMP2;
         heroDisplayMP[2] = heroMP3;
         heroDisplayMP[3] = heroMP4;
+        heroDisplayAction = new TextMeshProUGUI[4];
+        heroDisplayAction[0] = heroAction1;
+        heroDisplayAction[1] = heroAction2;
+        heroDisplayAction[2] = heroAction3;
+        heroDisplayAction[3] = heroAction4;
         enemyNameBars = new GameObject[4];
         enemyNameBars[0] = enemyNameBar;
         enemyNameBars[1] = enemyNameBar2;
@@ -217,7 +256,10 @@ public class BattleStateMachine : MonoBehaviour
 
     void OnEnable()
     {
+        actionTaken = "";
         SceneManager.sceneLoaded += OnSceneLoaded;
+        prevScene = sceneSO.sceneName;
+        audio = GetComponent<AudioSource>();
     }
 
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -239,8 +281,12 @@ public class BattleStateMachine : MonoBehaviour
             FlavorPanel.SetActive(false);
             ActionPointer.SetActive(false);
             ActionPointer2.SetActive(false);
+            DamagePanel.SetActive(false);
             firstRun = false;
             deadCounterRan = false;
+            missed = false;
+            assessUse = false;
+            turnTaken = false;
             HeroInput = HeroGUI.ACTIVATE;
             HeroAction = Action.ATTACK;
         }
@@ -253,6 +299,8 @@ public class BattleStateMachine : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        audio.volume = sceneSO.volume;
+
         switch (battleStates)
         {
             case (PerformAction.WAIT):
@@ -300,6 +348,8 @@ public class BattleStateMachine : MonoBehaviour
                             //Debug.Log(curPlayer);
                             EnemyPanel.SetActive(true);
                             HeroPanel.SetActive(true);
+                            turnTaken = false;
+                            canGo = false;
                             HeroChoice = new HandleTurns();
                             turnChoice = 1;
                             AttackText.color = Color.white;
@@ -308,6 +358,8 @@ public class BattleStateMachine : MonoBehaviour
                             ItemsText.color = Color.white;
                             RowText.color = Color.white;
                             FleeText.color = Color.white;
+                            firstPos = new(curPlayer.gameObject.transform.position.x, curPlayer.gameObject.transform.position.y, curPlayer.gameObject.transform.position.z);
+                            secondPos = new(curPlayer.gameObject.transform.position.x - 0.5f, curPlayer.gameObject.transform.position.y, curPlayer.gameObject.transform.position.z);
                             Vector3 pointerRotationDefault = new Vector3(0, 0, 0);
                             ActionPointer.transform.eulerAngles = pointerRotationDefault;
                             if (!curPlayer.ID.data.dead)
@@ -345,17 +397,10 @@ public class BattleStateMachine : MonoBehaviour
                     }
                     else
                     {
-                        for (int i = 0; i < HeroBattleList.Count(); i++)
-                        {
-                            curPlayer = HeroBattleList[i].transform.root.GetComponent<Player>();
-                            curPlayer.ID.data.dead = false;
-                            curPlayer.ID.stats.HP = 1;
-                            Vector3 aliveRotation = new Vector3(0, 0, 0);
-                            curPlayer.transform.eulerAngles = aliveRotation;
-                        }
                         Debug.Log("Victory");
                         //VICTORY!
-                        //add the encounterExp to level script NOW!
+                        StartCoroutine(Victory());
+                        break;
                     }
                 }
                 break;
@@ -364,6 +409,7 @@ public class BattleStateMachine : MonoBehaviour
                 {
                     if (!curPlayer.dead)
                     {
+                        turnTaken = false;
                         StartCoroutine(TurnDelay());
                     }
                     else
@@ -389,6 +435,8 @@ public class BattleStateMachine : MonoBehaviour
                             //Debug.Log(curTarget + " is alive");
                             enemyMoveRun = true;
                             int i = System.Array.IndexOf(enemies, EnemiesToManage[0]);
+                            enemyFirstPos = EnemiesToManage[0].transform.position;
+                            enemySecondPos = new Vector3(EnemiesToManage[0].transform.position.x + 0.5f, EnemiesToManage[0].transform.position.y, EnemiesToManage[0].transform.position.z);
                             enemyNames[i].color = Color.yellow;
                             StartCoroutine(EnemyMove());
                         }
@@ -403,13 +451,25 @@ public class BattleStateMachine : MonoBehaviour
             case (HeroGUI.SELECTACTION):
                 if (EnemyBattleList.Count != 0)
                 {
-                    ActionPanel.SetActive(true);
-                    ActionPointer.SetActive(true);
-                    HeroPanel.SetActive(true);
-                    EnemyPanel.SetActive(true);
-                    MagicPanel.SetActive(false);
-                    UserActionPanel.SetActive(false);
-                    SelectAction();
+                    if (HeroesToManage.Count != 0)
+                    {
+                        Debug.Log(turnTaken);
+                        turnTaken = false;
+                        if (turnTaken == false)
+                        {
+                            ActionPanel.SetActive(true);
+                            ActionPointer.SetActive(true);
+                            HeroPanel.SetActive(true);
+                            EnemyPanel.SetActive(true);
+                            MagicPanel.SetActive(false);
+                            UserActionPanel.SetActive(false);
+                            SelectAction();
+                        }
+                    }
+                    else
+                    {
+                        HeroInput = HeroGUI.ACTIVATE;
+                    }
                 }
                 else
                 {
@@ -459,8 +519,11 @@ public class BattleStateMachine : MonoBehaviour
                 break;
             case (HeroGUI.DONE):
                 ActionPointer.SetActive(false);
+                missed = false;
                 if (HeroesToManage.Count > 0)
                 {
+                    heroDisplayAction[heroIterator].text = actionTaken;
+                    turnTaken = false;
                     HeroInputDone();
                 }
                 else if (EnemiesToManage.Count > 0)
@@ -473,7 +536,7 @@ public class BattleStateMachine : MonoBehaviour
                 }
                 break;
             case (HeroGUI.GAMEEND):
-
+                SceneManager.LoadScene("GameOver", LoadSceneMode.Single);
                 break;
         }
         if (firstRun)
@@ -486,6 +549,7 @@ public class BattleStateMachine : MonoBehaviour
 
             }
         }
+        Debug.Log(HeroInput);
     }
 
     IEnumerator HeroEnemyLists()
@@ -627,7 +691,6 @@ public class BattleStateMachine : MonoBehaviour
             ActionPanel.SetActive(false);
             ActionPanel2.SetActive(true);
         }
-
         switch (turnChoice)
         {
             case (1):
@@ -642,6 +705,9 @@ public class BattleStateMachine : MonoBehaviour
                 AttackText.color = Color.yellow;
                 if (Input.GetKeyDown(KeyCode.Return))
                 {
+                    turnTaken = true;
+                    actionTaken = "Attack";
+                    turnChoice = 1;
                     HeroInput = HeroGUI.TARGET;
                 }
                 break;
@@ -656,11 +722,15 @@ public class BattleStateMachine : MonoBehaviour
                 FleeText.color = Color.white;
                 if (curPlayer.ID.data.canDoMagic)
                 {
+                    userActionMP.text = "MP: " + curPlayer.ID.stats.MP.ToString();
+                    userActionName.text = curPlayer.ID.data.heroName.ToString();
                     MagicText.color = Color.yellow;
                     if (Input.GetKeyDown(KeyCode.Return))
                     {
                         if (curPlayer.ID.stats.MP >= 5)
                         {
+                            turnTaken = true;
+                            actionTaken = "Magic";
                             turnChoice = 1;
                             HeroInput = HeroGUI.MAGIC;
                             break;
@@ -698,7 +768,8 @@ public class BattleStateMachine : MonoBehaviour
                 DefendText.color = Color.yellow;
                 if (Input.GetKeyDown(KeyCode.Return))
                 {
-                    //Debug.Log(curPlayer.ID.data.heroName + " is now defending");
+                    turnTaken = true;
+                    actionTaken = "Defend";
                     curPlayer.defending = true;
                     HeroInput = HeroGUI.DONE;
                 }
@@ -731,6 +802,8 @@ public class BattleStateMachine : MonoBehaviour
                 RowText.color = Color.yellow;
                 if (Input.GetKeyDown(KeyCode.Return))
                 {
+                    turnTaken = true;
+                    actionTaken = "Row";
                     curPlayer.backRow = !curPlayer.backRow;
                     if (curPlayer.backRow)
                     {
@@ -755,10 +828,45 @@ public class BattleStateMachine : MonoBehaviour
                 FleeText.color = Color.yellow;
                 if (Input.GetKeyDown(KeyCode.Return))
                 {
+                    turnTaken = true;
+                    actionTaken = "Flee";
                     //have a display box that pops up that says "The party is fleeing!" then wait a few seconds then load the respective scene
+                    ActionPointer.SetActive(false);
+                    ActionPointer2.SetActive(false);
+                    StartCoroutine(Fleeing());
+                    HeroInput = HeroGUI.FLEE;
                 }
                 break;
         }
+    }
+
+    IEnumerator Fleeing()
+    {
+        ActionPanel2.SetActive(false);
+        FlavorPanel.SetActive(true);
+        FlavorText.text = "The party is fleeing!";
+        yield return new WaitForSeconds(2f);
+        SceneManager.LoadScene(prevScene, LoadSceneMode.Single);
+    }
+    IEnumerator Victory()
+    {
+        yield return new WaitForSeconds(0.2f);
+        for (int i = 0; i < HeroBattleList.Count(); i++)
+        {
+            curPlayer = HeroBattleList[i].transform.root.GetComponent<Player>();
+            if (curPlayer.ID.data.dead)
+            {
+                curPlayer.ID.data.dead = false;
+                curPlayer.ID.stats.HP = 1;
+                Vector3 aliveRotation = new Vector3(0, 0, 0);
+                curPlayer.transform.eulerAngles = aliveRotation;
+            }
+        }
+        ActionPanel2.SetActive(false);
+        FlavorPanel.SetActive(true);
+        FlavorText.text = "Victory!";
+        yield return new WaitForSeconds(1.8f);
+        SceneManager.LoadScene(prevScene, LoadSceneMode.Single);
     }
 
     public void Target()
@@ -817,11 +925,21 @@ public class BattleStateMachine : MonoBehaviour
                 }
             }
         }
+        if (turnChoice > EnemyBattleList.Count)
+        {
+            turnChoice = EnemyBattleList.Count;
+        }
+
+        Debug.Log(turnChoice);
         curTarget = EnemyBattleList[turnChoice - 1];
+        targetFirstPos = new(curTarget.transform.position.x, curTarget.transform.position.y, curTarget.transform.position.z);
+        targetSecondPos = new(curTarget.transform.position.x + 0.5f, curTarget.transform.position.y, curTarget.transform.position.z);
+        Debug.Log(curTarget);
         ActionPointer.transform.position = curTarget.transform.position + new Vector3(0, 1, 0);
         //change color of enemy text here
         if (Input.GetKeyDown(KeyCode.Backspace))
         {
+            turnTaken = false;
             DescPanel.SetActive(false);
             Vector3 pointerRotationDefault = new Vector3(0, 0, 0);
             ActionPointer.transform.eulerAngles = pointerRotationDefault;
@@ -837,10 +955,18 @@ public class BattleStateMachine : MonoBehaviour
             curTargetData = curTarget.transform.root.GetComponent<Enemy>();
             PhysDamageCalculator(curPlayer.ID.stats.str, curPlayer.ID.stats.agi, curPlayer.ID.data.lvl, curTargetData.ID.data.backRow, curTarget, curTargetData.ID.stats.def, curTargetData.ID.stats.agi, curTargetData.ID.data.stunned, curTargetData.ID.data.defending);
             curTargetData.curHP -= atkDmg;
+            if (!missed)
+            {
+                DamagePanel.SetActive(true);
+                DamagePopUp.PopUp(atkDmg.ToString());
+                StartCoroutine(DamagePanelTimer());
+            }
             StartCoroutine(attackerJiggle());
             if (atkDmg > 0)
             {
                 //play dmg sfx here
+                audio.clip = dmgSFX;
+                audio.Play();
                 if (curTarget.transform.root.GetComponent<Enemy>().curHP <= 0)
                 {
                     Destroy(curTarget);
@@ -856,9 +982,18 @@ public class BattleStateMachine : MonoBehaviour
             }
             else
             {
+                //miss sfx
+                audio.clip = missSFX;
+                audio.Play();
                 StartCoroutine(AttackDelay());
             }
         }
+    }
+
+    IEnumerator DamagePanelTimer()
+    {
+        yield return new WaitForSeconds(1f);
+        DamagePanel.SetActive(false);
     }
 
     void HeroInputDone()
@@ -868,6 +1003,7 @@ public class BattleStateMachine : MonoBehaviour
         heroIterator++;
         //PerformList.Add(HeroChoice);
         HeroesToManage.RemoveAt(0);
+        actionTaken = "";
         HeroInput = HeroGUI.ACTIVATE;
     }
 
@@ -963,6 +1099,10 @@ public class BattleStateMachine : MonoBehaviour
             {
                 //If the hitCritChance random number generated isn't low enough to hit, the attack misses and the attacker's turn is over
                 Debug.Log("Missed!");
+                missed = true;
+                DamagePanel.SetActive(true);
+                DamagePopUp.PopUp("Missed!");
+                StartCoroutine(DamagePanelTimer());
                 //Debug.Log("# Needed to Hit: " + (150 + (agiValue / 2) - (targetAgiValue / 2)));
                 atkDmg = 0;
             }
@@ -990,7 +1130,7 @@ public class BattleStateMachine : MonoBehaviour
 
     public IEnumerator targetJiggle()
     {
-        yield return new WaitForSeconds(0.1f);
+        yield return new WaitForSeconds(0.03f);
         Vector3 startPosition = new(curTarget.gameObject.transform.position.x, curTarget.gameObject.transform.position.y, curTarget.gameObject.transform.position.z);
         if (curTarget.tag == "Hero")
         {
@@ -1005,25 +1145,20 @@ public class BattleStateMachine : MonoBehaviour
         }
         yield return new WaitForSeconds(0.1f);
         curTarget.transform.position = startPosition;
-        yield return new WaitForSeconds(1f);
         HeroInput = HeroGUI.DONE;
     }
 
     public IEnumerator attackerJiggle()
     {
-        Vector3 startPosition = new(curPlayer.gameObject.transform.position.x, curPlayer.gameObject.transform.position.y, curPlayer.gameObject.transform.position.z);
-        Vector3 newPosition = new(curPlayer.gameObject.transform.position.x - 0.5f, curPlayer.gameObject.transform.position.y, curPlayer.gameObject.transform.position.z);
-        curPlayer.transform.position = newPosition;
+        curPlayer.transform.position = secondPos;
         yield return new WaitForSeconds(0.05f);
-        curPlayer.transform.position = startPosition;
+        curPlayer.transform.position = firstPos;
     }
     public IEnumerator enemyJiggle()
     {
-        Vector3 startPosition = new(curEnemy.gameObject.transform.position.x, curEnemy.gameObject.transform.position.y, curEnemy.gameObject.transform.position.z);
-        Vector3 newPosition = new(curEnemy.gameObject.transform.position.x + 0.5f, curEnemy.gameObject.transform.position.y, curEnemy.gameObject.transform.position.z);
-        curEnemy.transform.position = newPosition;
-        yield return new WaitForSeconds(0.1f);
-        curEnemy.transform.position = startPosition;
+        curEnemy.transform.position = enemySecondPos;
+        yield return new WaitForSeconds(0.01f);
+        curEnemy.transform.position = enemyFirstPos;
     }
 
     void PopulateHeroManageList()
@@ -1062,9 +1197,18 @@ public class BattleStateMachine : MonoBehaviour
         PhysDamageCalculator(curEnemy.ID.stats.str, curEnemy.ID.stats.agi, curEnemy.ID.data.lvl, playerTargetData.ID.data.backRow, curTarget, playerTargetData.ID.stats.def, playerTargetData.ID.stats.agi, playerTargetData.ID.data.stunned, playerTargetData.defending);
         playerTargetData.ID.stats.HP -= atkDmg;
         //Debug.Log(curTarget + playerTargetData.ToString() + " took " + atkDmg + " damage");
-        StartCoroutine(enemyJiggle());
+        DamagePanel.SetActive(true);
+        if (!missed)
+        {
+            DamagePopUp.PopUp(atkDmg.ToString());
+            StartCoroutine(DamagePanelTimer());
+            StartCoroutine(enemyJiggle());
+        }
         if (atkDmg > 0)
         {
+            //dmg sfx
+            audio.clip = dmgSFX;
+            audio.Play();
             if (playerTargetData.ID.stats.HP <= 0)
             {
                 playerTargetData.ID.stats.HP = 0;
@@ -1081,19 +1225,26 @@ public class BattleStateMachine : MonoBehaviour
         }
         else
         {
+            //miss sfx
+            audio.clip = missSFX;
+            audio.Play();
             yield return new WaitForSeconds(1f);
             HeroInput = HeroGUI.DONE;
         }
     }
     public IEnumerator TurnDelay()
     {
-        yield return new WaitForSeconds(0.5f);
-        HeroInput = HeroGUI.SELECTACTION;
+        StartCoroutine(CanGo());
+        yield return new WaitForSeconds(0.01f);
+        if (canGo == true)
+        {
+            HeroInput = HeroGUI.SELECTACTION;
+        }
     }
 
     public IEnumerator AttackDelay()
     {
-        yield return new WaitForSeconds(0.2f);
+        yield return new WaitForSeconds(0.01f);
         HeroInput = HeroGUI.DONE;
     }
 
@@ -1111,8 +1262,6 @@ public class BattleStateMachine : MonoBehaviour
             {
                 //Game Over
                 Debug.Log("Game Over");
-                //load a game over scene that is just a black background w/ the text "game over"
-                //then send the player back to the main menu and reset all player stats/data
                 HeroInput = HeroGUI.GAMEEND;
             }
             else
@@ -1468,7 +1617,7 @@ public class BattleStateMachine : MonoBehaviour
                 break;
             case (7):
                 ActionPointer.transform.position = new Vector3(0.15f, -2.75f, 0);
-                DescText.text = "Heal the target by 1/5 of their Max HP!";
+                DescText.text = "Heal the target by 1/3 of their Max HP!";
                 if (curPlayer.ID.data.knowsCure)
                 {
                     curSpell = cureData;
@@ -1482,6 +1631,7 @@ public class BattleStateMachine : MonoBehaviour
                             turnChoice = 1;
                             MagicPanel.SetActive(false);
                             DescPanel.SetActive(false);
+                            UserActionPanel.SetActive(false);
                             HeroInput = HeroGUI.MAGICTARGET;
                         }
                         else
@@ -1546,6 +1696,9 @@ public class BattleStateMachine : MonoBehaviour
     {
         Vector3 pointerRotation = new Vector3(0, 0, -90);
         ActionPointer.transform.eulerAngles = pointerRotation;
+        UserActionPanel.SetActive(false);
+        HeroPanel.SetActive(true);
+        EnemyPanel.SetActive(true);
         if (curSpell != cureData)
         {
             if (Input.GetKeyDown(KeyCode.DownArrow))
@@ -1601,6 +1754,8 @@ public class BattleStateMachine : MonoBehaviour
                 }
             }
             curTarget = EnemyBattleList[turnChoice - 1];
+            targetFirstPos = new(curTarget.transform.position.x, curTarget.transform.position.y, curTarget.transform.position.z);
+            targetSecondPos = new(curTarget.transform.position.x + 0.5f, curTarget.transform.position.y, curTarget.transform.position.z);
             curTargetData = curTarget.GetComponent<Enemy>();
             goalPosition = curTarget.transform.position;
             ActionPointer.transform.position = curTarget.transform.position + new Vector3(0, 1, 0);
@@ -1617,15 +1772,23 @@ public class BattleStateMachine : MonoBehaviour
                     }
                     MagicDmgCalc(curPlayer.ID.stats.mag, curPlayer.ID.data.lvl, curTargetData.ID.stats.mag, curSpell.spellDmg);
                     curTargetData.curHP -= atkDmg;
+                    DamagePanel.SetActive(true);
+                    DamagePopUp.PopUp(atkDmg.ToString());
+                    StartCoroutine(DamagePanelTimer());
                     StartCoroutine(attackerJiggle());
                     if (atkDmg > 0)
                     {
                         //play dmg sfx here
+                        audio.clip = dmgSFX;
+                        audio.Play();
                         Spells.AddRange(UnityEngine.GameObject.FindGameObjectsWithTag("Spell"));
                         HeroInput = HeroGUI.MOVESPELL;
                     }
                     else
                     {
+                        //miss sfx
+                        audio.clip = missSFX;
+                        audio.Play();
                         StartCoroutine(SpellDestroyer());
                         HeroInput = HeroGUI.DONE;
                     }
@@ -1636,6 +1799,10 @@ public class BattleStateMachine : MonoBehaviour
                 //assess
                 if (Input.GetKeyDown(KeyCode.Return))
                 {
+                    //healing sfx
+                    assessUse = true;
+                    audio.clip = healSFX;
+                    audio.Play();
                     tempFlavor = (curTargetData.ID.stats.enemyName + " Max HP: " + curTargetData.ID.stats.maxHP + " STR: " + curTargetData.ID.stats.str + " MAG: " + curTargetData.ID.stats.mag + " DEF: " + curTargetData.ID.stats.def + " AGI: " + curTargetData.ID.stats.agi);
                     StartCoroutine(FlavorTextFill());
                     UserActionPanel.SetActive(false);
@@ -1645,6 +1812,8 @@ public class BattleStateMachine : MonoBehaviour
         }
         else
         {
+            HeroPanel.SetActive(true);
+            EnemyPanel.SetActive(true);
             if (Input.GetKeyDown(KeyCode.DownArrow))
             {
                 turnChoice++;
@@ -1664,7 +1833,7 @@ public class BattleStateMachine : MonoBehaviour
             curTarget = HeroBattleList[turnChoice - 1];
             playerTargetData = curTarget.transform.root.GetComponent<Player>();
             ActionPointer.transform.position = curTarget.transform.position + new Vector3(0, 1, 0);
-            if (Input.GetKeyDown(KeyCode.Return))
+            if (Input.GetKeyDown(KeyCode.Return) && !playerTargetData.ID.data.dead)
             {
                 UserActionPanel.SetActive(false);
                 curPlayer.ID.stats.MP -= curSpell.MPCost;
@@ -1672,11 +1841,15 @@ public class BattleStateMachine : MonoBehaviour
                 {
                     heroDisplayMP[i].text = partyIDArray[i].stats.MP.ToString();
                 }
+                //healing sfx
+                audio.clip = healSFX;
+                audio.Play();
                 Cure();
             }
         }
         if (Input.GetKeyDown(KeyCode.Backspace))
         {
+            turnTaken = false;
             StartCoroutine(SpellDestroyer());
             DescPanel.SetActive(false);
             Vector3 pointerRotationDefault = new Vector3(0, 0, 0);
@@ -1688,7 +1861,7 @@ public class BattleStateMachine : MonoBehaviour
 
     void Cure()
     {
-        playerTargetData.ID.stats.HP += playerTargetData.ID.stats.maxHP / 5;
+        playerTargetData.ID.stats.HP += playerTargetData.ID.stats.maxHP / 3;
         if (playerTargetData.ID.stats.HP > playerTargetData.ID.stats.maxHP)
         {
             playerTargetData.ID.stats.HP = playerTargetData.ID.stats.maxHP;
@@ -1708,7 +1881,15 @@ public class BattleStateMachine : MonoBehaviour
     {
         FlavorText.text = tempFlavor;
         FlavorPanel.SetActive(true);
-        yield return new WaitForSeconds(3f);
+        if (!assessUse)
+        {
+            yield return new WaitForSeconds(2f);
+        }
+        else
+        {
+            yield return new WaitForSeconds(4f);
+        }
+        assessUse = false;
         FlavorPanel.SetActive(false);
         FlavorText.text = "";
     }
@@ -1756,6 +1937,12 @@ public class BattleStateMachine : MonoBehaviour
                 StartCoroutine(targetJiggle());
             }
         }
+    }
+
+    IEnumerator CanGo()
+    {
+        yield return new WaitForSeconds(0.05f);
+        canGo = true;
     }
 }
 

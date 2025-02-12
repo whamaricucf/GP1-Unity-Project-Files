@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: SlimeStats
   m_EditorClassIdentifier: 
   enemyName: Slime
-  maxHP: 5
+  maxHP: 20
   maxMP: 10
-  str: 6
+  str: 10
   mag: 3
   def: 3
   agi: 10

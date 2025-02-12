@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 095d3d63d235fb645a6059eb7bedd510, type: 3}
   m_Name: KnightroStats
   m_EditorClassIdentifier: 
-  HP: 25
-  maxHP: 25
+  HP: 44
+  maxHP: 50
   MP: 10
   maxMP: 10
   str: 10
   mag: 8
-  def: 6
-  agi: 9
+  def: 12
+  agi: 13
